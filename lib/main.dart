@@ -12,11 +12,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'FlutterKotlinIntegration',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'Flutter -> Kotlin Integration'),
     );
   }
 }
@@ -45,8 +45,8 @@ class _MyHomePageState extends State<MyHomePage> {
     } on PlatformException catch (e) {
       developer.log(e.stacktrace.toString());
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Não foi possível capturar a localização"),
+        SnackBar(
+          content: Text(e.message ?? "Erro ao capturar a localização"),
         ),
       );
     }
@@ -66,11 +66,11 @@ class _MyHomePageState extends State<MyHomePage> {
               'Minha Localização',
             ),
             Text(
-              "Latitude: $_lat",
+              "LAT: $_lat",
               style: Theme.of(context).textTheme.headline4,
             ),
             Text(
-              "Longitude: $_lng",
+              "LNG: $_lng",
               style: Theme.of(context).textTheme.headline4,
             ),
           ],
