@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'dart:developer' as developer;
 
 void main() {
   runApp(const MyApp());
@@ -12,7 +14,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-
         primarySwatch: Colors.blue,
       ),
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
@@ -30,12 +31,25 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  static const platform = MethodChannel('com.nunkison.flutter/location');
+  var _lat = 0.0;
+  var _lng = 0.0;
 
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
+  Future<void> _getLocation() async {
+    try {
+      final location = await platform.invokeMethod('getLocation');
+      setState(() {
+        _lat = location[0];
+        _lng = location[1];
+      });
+    } on PlatformException catch (e) {
+      developer.log(e.stacktrace.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Não foi possível capturar a localização"),
+        ),
+      );
+    }
   }
 
   @override
@@ -49,19 +63,23 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             const Text(
-              'You have pushed the button this many times:',
+              'Minha Localização',
             ),
             Text(
-              '$_counter',
+              "Latitude: $_lat",
+              style: Theme.of(context).textTheme.headline4,
+            ),
+            Text(
+              "Longitude: $_lng",
               style: Theme.of(context).textTheme.headline4,
             ),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+        onPressed: _getLocation,
+        tooltip: 'Get Location',
+        child: const Icon(Icons.gps_fixed),
       ),
     );
   }
