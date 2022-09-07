@@ -1,26 +1,37 @@
 package com.nunkison.flutter_kotlin_interaction
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.pm.PackageManager
-import android.location.Location
-import android.location.LocationListener
-import android.location.LocationManager
-import android.widget.Toast
+import android.os.Bundle
+import androidx.activity.viewModels
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 
-class MainActivity : FlutterActivity(), LocationListener {
+class MainActivity : FlutterFragmentActivity() {
+    private val vm: MainViewModel by viewModels {
+        buildMainViewModel()
+    }
 
-    private var locationManager: LocationManager? = null
     private var methodChannelResult: MethodChannel.Result? = null
 
-    var lat = 0.0
-    var lng = 0.0
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        vm.latlng.observe(this) {
+            if (it.lat != 0.0 && it.lng != 0.0) {
+                updateLocation(it)
+            } else {
+                if (vm.isProvidingLocations()) {
+                    emitError()
+                } else {
+                    vm.startLocationProvider()
+                }
+            }
+        }
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -28,43 +39,13 @@ class MainActivity : FlutterActivity(), LocationListener {
             flutterEngine.dartExecutor.binaryMessenger,
             CHANNEL
         ).setMethodCallHandler { call: MethodCall?, result: MethodChannel.Result? ->
-            methodChannelResult = result!!
-            if (locationManager == null) {
-                startLocationManager()
-            }
-            if (call!!.method.equals("getLocation")) {
-                updateLocation()
-            } else {
-                result.notImplemented()
+            methodChannelResult = result
+            when (call?.method) {
+                "startLocationService" -> vm.startLocationProvider()
+                "getLocation" -> vm.startLocationProvider()
+                else -> result?.notImplemented()
             }
         }
-    }
-
-    private fun startLocationManager() {
-        locationManager = getSystemService(LOCATION_SERVICE) as LocationManager?
-        if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                PERMISSION_REQUEST_ACCESS_FINE_LOCATION
-            )
-            return
-        }
-        startLocationUpdates()
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun startLocationUpdates() {
-        locationManager?.requestLocationUpdates(
-            LocationManager.NETWORK_PROVIDER,
-            0L,
-            0f,
-            this
-        )
     }
 
     override fun onRequestPermissionsResult(
@@ -75,10 +56,29 @@ class MainActivity : FlutterActivity(), LocationListener {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSION_REQUEST_ACCESS_FINE_LOCATION) {
             when (grantResults[0]) {
-                PackageManager.PERMISSION_GRANTED -> startLocationUpdates()
+                PackageManager.PERMISSION_GRANTED -> vm.startLocationProvider()
                 PackageManager.PERMISSION_DENIED -> sendPermissionError()
             }
         }
+    }
+
+    private fun emitError() {
+        methodChannelResult?.error(
+            "UNAVAILABLE",
+            "Localização ainda não disponível. Tente novamente dentro de alguns segundos.",
+            null
+        )
+        methodChannelResult = null
+    }
+
+    private fun updateLocation(latLng: LatLng) {
+        methodChannelResult?.success(
+            listOf(
+                latLng.lat,
+                latLng.lng
+            )
+        )
+        methodChannelResult = null
     }
 
     private fun sendPermissionError() {
@@ -90,23 +90,18 @@ class MainActivity : FlutterActivity(), LocationListener {
         methodChannelResult = null
     }
 
-    override fun onLocationChanged(location: Location) {
-        lat = location.latitude
-        lng = location.longitude
-    }
-
-    private fun updateLocation() {
-        if (lat == 0.0 || lng == 0.0){
-            methodChannelResult?.error(
-                "UNAVAILABLE",
-                "Localização ainda não disponível. Tente novamente dentro de alguns segundos.",
-                null
-            )
-        } else {
-            methodChannelResult?.success(listOf(lat, lng))
-            methodChannelResult = null
-        }
-    }
+    private fun buildMainViewModel() = MainViewModel.Factory(
+        LocationProvider(
+            app = application,
+            onPermissionRequest = {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                    MainActivity.PERMISSION_REQUEST_ACCESS_FINE_LOCATION
+                )
+            }
+        ),
+    )
 
     companion object {
         private const val PERMISSION_REQUEST_ACCESS_FINE_LOCATION = 100

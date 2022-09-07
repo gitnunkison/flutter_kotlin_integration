@@ -1,6 +1,7 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:developer' as developer;
 
 void main() {
   runApp(const MyApp());
@@ -34,6 +35,14 @@ class _MyHomePageState extends State<MyHomePage> {
   static const platform = MethodChannel('com.nunkison.flutter/location');
   var _lat = 0.0;
   var _lng = 0.0;
+
+  _MyHomePageState() {
+    platform.invokeMethod('startLocationService').then((value) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("Serviço de captura de localização inicializado."),
+      ));
+    });
+  }
 
   Future<void> _getLocation() async {
     try {
