@@ -1,37 +1,20 @@
 package com.nunkison.flutter_kotlin_interaction
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.viewModels
-import androidx.core.app.ActivityCompat
-import io.flutter.embedding.android.FlutterFragmentActivity
+import androidx.lifecycle.lifecycleScope
+import com.nunkison.flutter_kotlin_interaction.viewmodel.LatLng
+import com.nunkison.flutter_kotlin_interaction.viewmodel.MainViewModel
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import kotlinx.coroutines.launch
 
-class MainActivity : FlutterFragmentActivity() {
-    private val vm: MainViewModel by viewModels {
-        buildMainViewModel()
-    }
+class MainActivity : MainViewModelFlutterFragmentActivity() {
 
     private var methodChannelResult: MethodChannel.Result? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        vm.latlng.observe(this) {
-            if (it.lat != 0.0 && it.lng != 0.0) {
-                updateLocation(it)
-            } else {
-                if (vm.isProvidingLocations()) {
-                    emitError()
-                } else {
-                    vm.startLocationProvider()
-                }
-            }
-        }
-    }
+    override val vm: MainViewModel by viewModels { inject() }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -41,34 +24,41 @@ class MainActivity : FlutterFragmentActivity() {
         ).setMethodCallHandler { call: MethodCall?, result: MethodChannel.Result? ->
             methodChannelResult = result
             when (call?.method) {
-                "startLocationService" -> vm.startLocationProvider()
-                "getLocation" -> vm.startLocationProvider()
+                "startLocationService" -> loadLocation()
+                "getLocation" -> loadLocation()
                 else -> result?.notImplemented()
             }
         }
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == PERMISSION_REQUEST_ACCESS_FINE_LOCATION) {
-            when (grantResults[0]) {
-                PackageManager.PERMISSION_GRANTED -> vm.startLocationProvider()
-                PackageManager.PERMISSION_DENIED -> sendPermissionError()
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        vm.latLng.observe(this) {
+            if (it.lat != 0.0 && it.lng != 0.0) {
+                updateLocation(it)
+                methodChannelResult = null
+            } else {
+                loadLocation()
             }
         }
     }
 
-    private fun emitError() {
-        methodChannelResult?.error(
-            "UNAVAILABLE",
-            "Localização ainda não disponível. Tente novamente dentro de alguns segundos.",
-            null
-        )
+    override fun onPermissionDenied() {
+        sendPermissionError()
         methodChannelResult = null
+    }
+
+    override fun onPermissionGranted() {
+        loadLocation()
+    }
+
+    private fun loadLocation() {
+        lifecycleScope.launch {
+            try {
+                vm.loadLocation()
+            } catch (e: Exception) {}
+        }
     }
 
     private fun updateLocation(latLng: LatLng) {
@@ -78,7 +68,6 @@ class MainActivity : FlutterFragmentActivity() {
                 latLng.lng
             )
         )
-        methodChannelResult = null
     }
 
     private fun sendPermissionError() {
@@ -87,24 +76,7 @@ class MainActivity : FlutterFragmentActivity() {
             "Para capturar a localização, é necessária autorização.",
             null
         )
-        methodChannelResult = null
-    }
-
-    private fun buildMainViewModel() = MainViewModel.Factory(
-        LocationProvider(
-            app = application,
-            onPermissionRequest = {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                    MainActivity.PERMISSION_REQUEST_ACCESS_FINE_LOCATION
-                )
-            }
-        ),
-    )
-
-    companion object {
-        private const val PERMISSION_REQUEST_ACCESS_FINE_LOCATION = 100
-        private const val CHANNEL = "com.nunkison.flutter/location"
     }
 }
+
+const val CHANNEL = "com.nunkison.flutter/location"

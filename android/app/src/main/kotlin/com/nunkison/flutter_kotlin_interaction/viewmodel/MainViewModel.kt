@@ -1,15 +1,14 @@
-package com.nunkison.flutter_kotlin_interaction
+package com.nunkison.flutter_kotlin_interaction.viewmodel
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.nunkison.flutter_kotlin_interaction.location_provider.LocationProvider
 
 interface MainViewModel {
-    fun startLocationProvider()
+    suspend fun loadLocation()
 
-    val latlng: LiveData<LatLng>
-
-    fun isProvidingLocations(): Boolean
+    val latLng: LiveData<LatLng>
 
     class Factory(
         private val locationProvider: LocationProvider

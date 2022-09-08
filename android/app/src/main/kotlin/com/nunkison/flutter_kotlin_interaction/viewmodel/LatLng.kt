@@ -1,4 +1,4 @@
-package com.nunkison.flutter_kotlin_interaction
+package com.nunkison.flutter_kotlin_interaction.viewmodel
 
 data class LatLng(
     val lat: Double,

@@ -1,10 +1,14 @@
-import 'dart:developer' as developer;
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import 'home/home_page.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    const ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -17,79 +21,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter -> Kotlin Integration'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  static const platform = MethodChannel('com.nunkison.flutter/location');
-  var _lat = 0.0;
-  var _lng = 0.0;
-
-  _MyHomePageState() {
-    platform.invokeMethod('startLocationService').then((value) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text("Serviço de captura de localização inicializado."),
-      ));
-    });
-  }
-
-  Future<void> _getLocation() async {
-    try {
-      final location = await platform.invokeMethod('getLocation');
-      setState(() {
-        _lat = location[0];
-        _lng = location[1];
-      });
-    } on PlatformException catch (e) {
-      developer.log(e.stacktrace.toString());
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.message ?? "Erro ao capturar a localização"),
-        ),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'Minha Localização',
-            ),
-            Text(
-              "LAT: $_lat",
-              style: Theme.of(context).textTheme.headline4,
-            ),
-            Text(
-              "LNG: $_lng",
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _getLocation,
-        tooltip: 'Get Location',
-        child: const Icon(Icons.gps_fixed),
-      ),
+      home: const HomePage(title: 'Flutter -> Kotlin Integration'),
     );
   }
 }
