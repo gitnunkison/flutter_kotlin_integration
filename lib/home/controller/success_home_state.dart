@@ -15,4 +15,15 @@ class SuccessHomeState extends BaseState {
         latLng: LatLng.empty(),
         loading: false,
       );
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SuccessHomeState &&
+          runtimeType == other.runtimeType &&
+          latLng == other.latLng &&
+          loading == other.loading;
+
+  @override
+  int get hashCode => latLng.hashCode ^ loading.hashCode;
 }
