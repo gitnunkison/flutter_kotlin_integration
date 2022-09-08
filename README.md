@@ -1,16 +1,18 @@
-# flutter_kotlin_interaction
+# Projeto flutter_kotlin_interaction
 
-Um exemplo de comunicação entre o flutter e o kotlin
+Um exemplo de comunicação entre o flutter e o kotlin.
 
-## Getting Started
+## O que está acontecendo?
 
-This project is a starting point for a Flutter application.
+> Neste projeto exemplifiquei como é possivel a comunicação do nativo Android Kotlin com Dart em Flutter. Usei como exemplo a necessidade de buscar latitude e longitude. Obviamente já existem bibliotecas que fazem isso, mas para exemplo de comunicação, serviu bem.
+> Procurei usar o melhor possivel do clean code
+> Implementação de testes
+> Uso mínimo de dependencias externas
+> Abstrações para facil reaproveitamento de código
 
-A few resources to get you started if this is your first Flutter project:
+## Como testar?
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+> Versione o projeto e rode preferencialmente no Android Studio (onde foi desenvolvido)
+> Reproduza o aplicativo preferencialmente num aparelho físico, com acesso ao GPS
+> Você pode optar rodar o aplicativo pela pasta normal do flutter, ou pela pasta Android, os dois devem funcionar da mesma forma
+> Pressione o botão flutante abaixo, autorize o acesso a localizações e aguarde alguns segundos para que as coordenadas sejam capturadas e exibidas na tela.
